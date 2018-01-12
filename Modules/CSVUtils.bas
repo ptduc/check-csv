@@ -23,7 +23,7 @@ Private CSVUtilsAnyErrorIsFatal As Boolean  'default False
 Private Sub ErrorRaise(code As Long, src As String, msg As String, Optional ByVal fileOverView As String, Optional ByVal line As Long)
   ' raise only if this is the first error
   'If Err.Number = 0 Then Err.Raise code, src, msg
-
+  
     If Err.Number = 0 Then
         If code = 10002 Then
             'Log.ERROR (Replace(Replace(ERROR_DOUBLE_QUOTE, "%{fileName}", fileOverView), "%{row}", line))
@@ -64,12 +64,12 @@ Head:
     Dim fields As Collection
     Dim csvCollection As Collection
     Set csvCollection = New Collection 'empty collection
-
+    
     Set ParseCSVToCollection = csvCollection
-
+    
     'for empty text
     If csvText = "" Then Exit Function 'return empty collection
-
+    
     'extract records and fields
     csvPos = 1
     Do While GetOneRecord(csvText, csvPos, recordText, fileOverView, line)
@@ -86,14 +86,14 @@ Head:
             fields.Add fieldText
         Loop
         csvCollection.Add fields
-
+        
         If csvCollection(1).Count <> fields.Count Then
             ErrorRaise 10001, "ParseCSVToCollection", "Syntax Error in CSV: numbers of fields are different among records", fileOverView, line
             GoTo ErrorExit
         End If
     Loop
     If Err.Number <> 0 Then GoTo ErrorExit
-
+    
     Set ParseCSVToCollection = csvCollection
     Exit Function
 
@@ -113,22 +113,22 @@ Public Function ParseCSVToArray(ByRef csvText As String, ByVal separater As Stri
     Err.Clear
     If CSVUtilsAnyErrorIsFatal Then GoTo Head
     On Error Resume Next
-
+    
 Head:
     Dim csv As Collection
     Dim recCnt As Long, fldCnt As Long
     Dim csvArray() As String
     Dim ri As Long, fi As Long
     Dim rc As Variant, cc As Variant
-
+    
     ParseCSVToArray = Null 'for error
-
+  
     ' convert CSV text to Collection
     Set csv = ParseCSVToCollection(csvText, separater, fileOverView, line)
     If csv Is Nothing Then  'error occur
         Exit Function
     End If
-
+    
     ' get size of collections
     recCnt = csv.Count
     If recCnt = 0 Then
@@ -137,7 +137,7 @@ Head:
         Exit Function
     End If
     fldCnt = csv(1).Count
-
+    
     ' copy collection to array
     ReDim csvArray(1 To recCnt, 1 To fldCnt) As String
     ri = 1
@@ -149,7 +149,7 @@ Head:
       Next
       ri = ri + 1
     Next
-
+    
     ParseCSVToArray = csvArray
 End Function
 
@@ -172,7 +172,7 @@ Head:
     Dim v As Variant
     Dim cell As String
     Dim arrRecord As Variant, arrField As Variant
-
+    
     'error check
     If Not IsArray(inArray) Then
         ErrorRaise 10004, "ConvertArrayToCSV", "Input argument inArray is not array"
@@ -185,7 +185,7 @@ Head:
 
     ReDim arrRecord(LBound(inArray, 1) To UBound(inArray, 1)) As String 'temporary array
     ReDim arrField(LBound(inArray, 2) To UBound(inArray, 2)) As String 'temporary array
-
+    
     For r = LBound(inArray, 1) To UBound(inArray, 1)
       For c = LBound(inArray, 2) To UBound(inArray, 2)
         v = inArray(r, c)
@@ -203,7 +203,7 @@ Head:
       arrRecord(r) = Join(arrField, ",") & vbCrLf
     Next
     If Err.Number <> 0 Then GoTo ErrorExit 'unexpected error
-
+    
     ConvertArrayToCSV = Join(arrRecord, "")
     Exit Function
 ErrorExit:
@@ -230,13 +230,13 @@ End Function
 Private Function FindNextSeparator(ByRef inText As String, ByRef start As Long, ByRef foundText As String, ByRef sep1 As String, Optional ByRef sep2 As String = "", Optional ByVal fileOverView As String, Optional ByVal line As Long) As Boolean
     Dim dQuateCnt As Long
     Dim init_start As Long, lenText As Long, p2 As Long, found As Long
-
+    
     FindNextSeparator = False
     lenText = Len(inText)
     init_start = start
-
+        
     If start > lenText Then Exit Function 'over-run
-
+    
     dQuateCnt = 0
     Do While start <= lenText
         'find next separator
@@ -246,7 +246,7 @@ Private Function FindNextSeparator(ByRef inText As String, ByRef start As Long, 
           If p2 <> 0 And (found = 0 Or p2 < found) Then found = p2
         End If
         If found = 0 Then found = lenText + 1 'EOF
-
+                
         dQuateCnt = dQuateCnt + StrCount(inText, """", start, found - 1) 'number of double quates in inText
         start = found + 1
         If dQuateCnt Mod 2 = 0 Then  'if the number of double-quates is even, then the separator is not fake
@@ -255,7 +255,7 @@ Private Function FindNextSeparator(ByRef inText As String, ByRef start As Long, 
             Exit Function
         End If
     Loop
-
+    
     ErrorRaise 10002, "ParseCSVToCollection", "Syntax Error in CSV: illegal double-quote code", fileOverView, line
 End Function
 
@@ -297,3 +297,5 @@ Private Function TrimQuotes(ByRef text As String) As String
     'return
     TrimQuotes = Mid(text, p0 + 1, p1 - p0 - 1)
 End Function
+
+

@@ -60,7 +60,10 @@ Public Const ERROR_OVER_RECORD = "%{fileName}Fƒtƒ@ƒCƒ‹‚ÌÅ‘åƒŒƒR[ƒh‚ğ’´‚¦‚Ä‚¢‚
 Public Const CHECK_EXISTS_SHEET = "ŠY“–ƒJƒ‰ƒ€’è‹`ƒV[ƒg‚ÍŠù‚É‘¶İ‚µ‚Ä‚¢‚Ü‚·B"
 Public Const ERROR_NOT_EXISTS_SHEET = "%{fileName}‚ÌƒJƒ‰ƒ€’è‹`ƒV[ƒg‚Í‘¶İ‚µ‚Ä‚¢‚Ü‚¹‚ñB" & vbNewLine & "ƒ`ƒFƒbƒN‚µ‚½s‚Íuì¬vƒ{ƒ^ƒ“‚ğƒNƒŠƒbƒN‚µAƒJƒ‰ƒ€’è‹`ƒV[ƒg‚ğì¬‚µ‚Ä‚­‚¾‚³‚¢B"
 Public Const ERROR_COLUMN_NOT_NULL = "%{fileName}Fs%{row}‚É%{column}ƒJƒ‰ƒ€‚Éƒf[ƒ^‚ğİ’è‚µ‚Ä‚­‚¾‚³‚¢B"
+'huynnp
+'<ƒtƒ@ƒCƒ‹ŠT—v>Fs{ƒf[ƒ^‚ªd•¡‚³‚ê‚½s”}‚É{ƒJƒ‰ƒ€—˜_–¼}ƒJƒ‰ƒ€‚É‚Íd•¡ƒf[ƒ^‚ª‚ ‚è‚Ü‚·B
 Public Const ERROR_COLUMN_PRIMARY_KEY = "%{fileName}Fs%{row}‚É%{column}ƒJƒ‰ƒ€‚É‚Íd•¡ƒf[ƒ^‚ª‚ ‚è‚Ü‚·B"
+
 Public Const ERROR_COLUMN_DATE_FORMAT = "%{fileName}Fs%{row}‚É%{column}ƒJƒ‰ƒ€‚Ì’l‚ÌƒtƒH[ƒ}ƒbƒg‚Í’è‹`‚Æˆê’v‚µ‚Ä‚¢‚Ü‚¹‚ñB"
 Public Const ERROR_DOUBLE_QUOTE = "%{fileName}Fs%{row}‚ÉAƒJƒ‰ƒ€“ü—Í‹K‘¥‚ÆˆÙ‚È‚éƒJƒ‰ƒ€‚ª‘¶İ‚µ‚Ü‚·B"
 'huynnp
@@ -301,6 +304,8 @@ Sub btnProcess_Click()
                 'Check Primary key
                 For Each pkey In lstColPrimaryKey
                     rowNumCSV = 1
+                    errorRowNumCSV = ""
+                    errorColumnName = ""
                     For Each Row In csvContent
                         Count = 0
                         For Each Row2 In csvContent
@@ -309,11 +314,14 @@ Sub btnProcess_Click()
                             End If
                         Next
                         If Count > 1 Then
+                            'errorRowNumCSV = errorRowNumCSV & "A" & rowNumCSV
                             ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + pkey + 1).value
+                            'errorColumnName = ColumnName
                             Log.ERROR (Replace(Replace(Replace(ERROR_COLUMN_PRIMARY_KEY, "%{fileName}", fileOverView), "%{row}", rowNumCSV), "%{column}", ColumnName))
                         End If
                         rowNumCSV = rowNumCSV + 1
                     Next
+                    
                 Next pkey
                 
                 rowNumCSV = 1
@@ -425,6 +433,7 @@ Sub btnGetextractionList_Click()
                     If flagRecordSize = "‘SŒ" Then
                         errorRows = errorRows & " " & rowNum
                     Else
+                    'huynnp
                         arrayPattern = Split(stringPattern, ";")
                         For j = 0 To UBound(arrayPattern)
                             If arrayPattern(j) = Split(name_pattern, "<")(0) Then
@@ -436,8 +445,7 @@ Sub btnGetextractionList_Click()
                         If flagDuplicateNamePattern = False Then
                             stringPattern = stringPattern & ";" & Split(name_pattern, "<")(0)
                         End If
-                        
-                        
+                                                
                         If Trim(errorPatterns) = "" Then
                             Common.dataCheckSheet.Range(COL_DATA_CHECK_NO & addIndex).value = rowNum
                             Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME_PATTERN & addIndex).value = Split(name_pattern, "<")(0)
@@ -453,6 +461,7 @@ Sub btnGetextractionList_Click()
                 ElseIf IsEmpty(name_pattern) Then
                     errorRows = errorRows & " " & rowNum
                 Else
+                'huynnp
                     arrayPattern = Split(stringPattern, ";")
                     For j = 0 To UBound(arrayPattern)
                         If arrayPattern(j) = Split(name_pattern, "<")(0) Then
@@ -482,7 +491,7 @@ Sub btnGetextractionList_Click()
                 errorRows = errorRows & " " & rowNum
             End If
         Next i
-
+'huynnp
         If IsEmpty(Trim(errorRows)) = False And Trim(errorRows) <> "" Then
             Validation.extractionEmptyFileSize (errorRows)
         Else

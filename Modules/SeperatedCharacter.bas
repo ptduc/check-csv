@@ -9,7 +9,7 @@ Function checkSeperatedCharacter(ByVal strLine As String, strSeperatedChar As St
     Dim strTmpLine As String
     Dim strTmpLineQuote As String
     Dim vntTmpLineListByQuote As Variant
-
+    
     If InStr(strLine, Chr(34)) = 0 Then
         'Line without double quote
         vntColumns = Split(strLine, strSeperatedChar)
@@ -34,17 +34,17 @@ Function checkSeperatedCharacter(ByVal strLine As String, strSeperatedChar As St
         Next
         'Remove end comma
         strTmpLine = Left(strTmpLine, Len(strTmpLine) - 1)
-
+        
         vntColumns = Split(strTmpLine, strSeperatedChar)
     End If
-
+    
     'Compare number of columns
     If UBound(vntColumns) + 1 = intNoOfCol Then
         checkSeperatedCharacter = True
     Else
         checkSeperatedCharacter = False
     End If
-
+    
 End Function
 
 'Get process line of MAC file
@@ -53,25 +53,25 @@ Function getProcessLine(ByVal vntLines As Variant, ByVal startRowData As Integer
     Dim vntListByQuote As Variant
     Dim strTmpLine As String
     Dim processLineIndex As Integer
-
+    
     processLineIndex = 0
-
+    
     For lineIndex = LBound(vntLines) To UBound(vntLines)
         'Limit 1000 record of data
         If (processLineIndex + 1) > (startRowData + 1000) Then
             Exit For
         End If
-
+        
         If (processLineIndex + 1) > startRowData Then
             If lineIndex = UBound(vntLines) And vntLines(lineIndex) = "" Then Exit For
-
+        
             ReDim Preserve arrProcessLine(processLineIndex)
-
+            
             If InStr(vntLines(lineIndex), Chr(34)) = 0 Then
                 'Not contain double quote
-
+                
                     arrProcessLine(processLineIndex) = vntLines(lineIndex)
-
+                
             ElseIf InStr(vntLines(lineIndex), Chr(34)) > 0 Then
                 'Contain double quote
                 Do
@@ -89,6 +89,7 @@ Function getProcessLine(ByVal vntLines As Variant, ByVal startRowData As Integer
         End If
         processLineIndex = processLineIndex + 1
     Next
-
+    
     getProcessLine = arrProcessLine
 End Function
+

@@ -14,11 +14,11 @@ Function newLineCharacter(ByVal path As String, vbVal As Integer)
     Dim buffer As String, original As String
     Dim file As Integer
     file = FreeFile
-
+    
     Open path For Input As #file
     buffer = Input(LOF(file), file)
     Close #file
-
+        
     If InStr(1, buffer, vbCrLf) > 0 Then
         If vbVal = 1 Then
             original = vbCrLf
@@ -38,13 +38,13 @@ Function newLineCharacter(ByVal path As String, vbVal As Integer)
             original = "CR"
         End If
     End If
-
-
+    
+    
     newLineCharacter = original
 End Function
 
 Function csvToArray(ByVal emiFilePath As String, ByVal delimiter As String, ByVal newLineChar As String) As Variant()
-
+    
     Dim TextFile As Integer
     Dim filePath As String
     Dim FileContent As String
@@ -86,38 +86,38 @@ End Function
 'Check file encoding
 'File encoding with BOM always return true encoding, otherwise return ANSI
 Function encoding(ByVal strFileName As String) As String
-
+  
     Dim intFileNumber As Integer
     Dim lngFileSize As Long
     Dim strBuffer As String
     Dim lngCharNumber As Long
     Dim strCharacter As String * 1
-
+     
     'Get the next available File Number
     intFileNumber = FreeFile
-
+     
     Open strFileName For Binary Access Read As #intFileNumber
-
+     
     lngFileSize = LOF(intFileNumber)    'How large is the File in Bytes?
     If lngFileSize > 10000 Then
         lngFileSize = 10000
     End If
     strBuffer = Space$(lngFileSize)     'Set Buffer Size to File Length
-
+     
     Get #intFileNumber, , strBuffer     'Grab a Chunk of Data from the File
     Close #intFileNumber
-
+     
     Dim bytes() As Byte
     ReDim bytes(0 To lngFileSize - 1)
     arrayIndex = 0
-
+    
     'Display results on a Byte-by-Byte basic
     For lngCharNumber = 1 To lngFileSize
       strCharacter = LCase(Mid(strBuffer, lngCharNumber, 1))
-
+      
       value = Hex$(Asc(strCharacter))
       'Debug.Print "value: " & value
-
+      
       'for 1 byte
       If Len(value) = 2 Then
         bytes(arrayIndex) = CByte("&H" & value)
@@ -130,11 +130,11 @@ Function encoding(ByVal strFileName As String) As String
         bytes(arrayIndex + 1) = CByte("&H" & lastByte)
         arrayIndex = arrayIndex + 1
       End If
-
+      
     Next lngCharNumber
-
+     
     tmp = JudgeCode(bytes)
-
+    
     If tmp = "JIS" Or tmp = "SJIS" Or tmp = "EUC" Or tmp = "Shift-JIS" Then
         encoding = "Shift-JIS"
     ElseIf tmp = "UTF-8" Or tmp = "UNI" Or tmp = "UNICODE" Then
@@ -145,13 +145,13 @@ End Function
 
 'Return true -> finish, false -> continue
 Function detectBOM(ByVal filePath As String) As Boolean
-
+  
   Dim b1 As Byte, b2 As Byte
   Open filePath For Binary As #1
   Get #1, , b1
   Get #1, , b2
   Close #1
-
+  
   If b1 = &HFF And b2 = &HFE Then
     detectBOM = True
   ElseIf b1 = &HFE And b2 = &HFF Then
@@ -165,7 +165,7 @@ End Function
 
 'Get Quantity Of File
 Function getFileLine(ByVal filePath As String) As Long
-
+    
     Dim s As String
     Dim n As Long
 
@@ -180,3 +180,4 @@ Function getFileLine(ByVal filePath As String) As Long
     getFileLine = n
 
 End Function
+

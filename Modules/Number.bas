@@ -20,3 +20,4 @@ Function roundDownAuto(a As Double) As Double
         End If
     Next
 End Function
+

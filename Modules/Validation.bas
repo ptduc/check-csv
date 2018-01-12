@@ -118,7 +118,7 @@ Function validateQuote(ByVal textData As String, ByVal regEx As RegExp)
     validateQuote = regEx.Test(textData)
     
 End Function
-
+'huynnp
 Function duplicateNamePattern(errorPatterns As String)
     errorPatterns = Replace(Trim(errorPatterns), " ", ",")
     If IsEmpty(errorPatterns) = False And errorPatterns <> "" Then

@@ -41,19 +41,19 @@ Function readFileByLine(ByVal filePath As String, ByVal limitLine As Long) As St
     Dim fileNo As Integer
     Dim textData As String
     Dim textRow As String
-
+    
     fileNo = FreeFile
     Open filePath For Input As #fileNo
-
+    
     currentLine = 1
     Do While Not EOF(fileNo) And currentLine <= limitLine
         Line Input #fileNo, textRow
         textData = textData & textRow
     Loop
-
+    
     Close #fileNo
     readFileByLine = textData
-
+    
 End Function
 
 Function getFileName(ByVal filePath As String) As String

@@ -39,22 +39,22 @@ Public Function JudgeCode(ByRef bytCode() As Byte) As String
     Dim lngUNI As Long
     Dim lngUTF7 As Long
     Dim lngUTF8 As Long
-
+    
     lngJIS = JudgeJIS(bytCode, True): Debug.Print "JIS :" & lngJIS
     If lngJIS >= JUDGEFIX Then JudgeCode = "JIS": Exit Function
-
+    
     lngUNI = JudgeUNI(bytCode, True): Debug.Print "UNI :" & lngUNI
     If lngUNI >= JUDGEFIX Then JudgeCode = "UNICODE": Exit Function
-
+    
     lngUTF8 = JudgeUTF8(bytCode, True): Debug.Print "UTF8:" & lngUTF8
     If lngUTF8 >= JUDGEFIX Then JudgeCode = "UTF8": Exit Function
 
     lngUTF7 = JudgeUTF7(bytCode, True): Debug.Print "UTF7:" & lngUTF7
     If lngUTF7 >= JUDGEFIX Then JudgeCode = "UTF7": Exit Function
-
+    
     lngSJIS = JudgeSJIS(bytCode, True): Debug.Print "SJIS:" & lngSJIS
     If lngSJIS >= JUDGEFIX Then JudgeCode = "SJIS": Exit Function
-
+    
     lngEUC = JudgeEUC(bytCode, True): Debug.Print "EUC :" & lngEUC
     If lngEUC >= JUDGEFIX Then JudgeCode = "EUC": Exit Function
     Debug.Print "--------"
@@ -64,37 +64,37 @@ Public Function JudgeCode(ByRef bytCode() As Byte) As String
         JudgeCode = "SJIS"
         Exit Function
     End If
-
+    
     If lngUNI >= lngSJIS And lngUNI >= lngUNI And lngUNI >= lngJIS And _
        lngUNI >= lngUTF7 And lngUNI >= lngUTF8 And lngUNI >= lngEUC Then
         JudgeCode = "UNICODE"
         Exit Function
     End If
-
+    
     If lngJIS >= lngSJIS And lngJIS >= lngUNI And lngJIS >= lngJIS And _
        lngJIS >= lngUTF7 And lngJIS >= lngUTF8 And lngJIS >= lngEUC Then
         JudgeCode = "JIS"
         Exit Function
     End If
-
+    
     If lngUTF7 >= lngSJIS And lngUTF7 >= lngUNI And lngUTF7 >= lngJIS And _
        lngUTF7 >= lngUTF7 And lngUTF7 >= lngUTF8 And lngUTF7 >= lngEUC Then
         JudgeCode = "UTF7"
         Exit Function
     End If
-
+    
     If lngUTF8 >= lngSJIS And lngUTF8 >= lngUNI And lngUTF8 >= lngJIS And _
        lngUTF8 >= lngUTF7 And lngUTF8 >= lngUTF8 And lngUTF8 >= lngEUC Then
         JudgeCode = "UTF8"
         Exit Function
     End If
-
+    
     If lngEUC >= lngSJIS And lngEUC >= lngUNI And lngEUC >= lngJIS And _
        lngEUC >= lngUTF7 And lngEUC >= lngUTF8 And lngEUC >= lngEUC Then
         JudgeCode = "EUC"
         Exit Function
     End If
-
+    
 End Function
 
 '----SJIS関係
@@ -109,7 +109,7 @@ Private Function JudgeSJIS(ByRef bytCode() As Byte, _
     Dim i As Long
     Dim lngFit As Long
     Dim lngUB As Long
-
+    
     lngUB = JUDGESIZEMAX - 1
     If lngUB > UBound(bytCode()) Then
         lngUB = UBound(bytCode())
@@ -126,15 +126,15 @@ Private Function JudgeSJIS(ByRef bytCode() As Byte, _
                     i = i + 1
                 End If
             End If
-
+        
         'A1-DF(1バイト目)
         ElseIf (bytCode(i) >= &HA1 And bytCode(i) <= &HDF) Then
             lngFit = lngFit + (1 * SingleByteWeight)
-
+        
         '20-7E(1バイト目)
         ElseIf (bytCode(i) >= &H20 And bytCode(i) <= &H7E) Then
             lngFit = lngFit + (1 * SingleByteWeight)
-
+        
         '00-1F, 7F(1バイト目)
         ElseIf (bytCode(i) >= &H0 And bytCode(i) <= &H1F) Or _
                 bytCode(i) = &H7F Then
@@ -157,7 +157,7 @@ Private Function JudgeJIS(ByRef bytCode() As Byte, _
     Dim lngFit As Long
     Dim lngMode As JISMODE
     Dim lngUB As Long
-
+    
     lngUB = JUDGESIZEMAX - 1
     If lngUB > UBound(bytCode()) Then
         lngUB = UBound(bytCode())
@@ -271,7 +271,7 @@ Private Function JudgeEUC(ByRef bytCode() As Byte, _
     Dim i As Long
     Dim lngFit As Long
     Dim lngUB As Long
-
+    
     lngUB = JUDGESIZEMAX - 1
     If lngUB > UBound(bytCode()) Then
         lngUB = UBound(bytCode())
@@ -285,7 +285,7 @@ Private Function JudgeEUC(ByRef bytCode() As Byte, _
                     i = i + 1
                 End If
             End If
-
+        
         '8F(1バイト目) + A1-0xFE(2・3バイト目)
         ElseIf bytCode(i) = &H8F Then
             If i <= UBound(bytCode) - 2 Then
@@ -352,57 +352,57 @@ Private Function JudgeUNI(ByRef bytCode() As Byte, _
             '    Exit Function
             'End If
         End If
-
+        
         If i <= UBound(bytCode) - 1 Then
             '00(2バイト目)
             If (bytCode(i + 1) = &H0) Then
                 '00-FF(1バイト目)
                 lngFit = lngFit + (2 * Multi_ByteWeight)
-
+            
             '01-33(2バイト目)
             ElseIf (bytCode(i + 1) >= &H1 And bytCode(i + 1) <= &H33) Then
                 '00-FF(1バイト目)
                 lngFit = lngFit + (2 * Multi_ByteWeight)
-
+            
             '34-4D(2バイト目)
             ElseIf (bytCode(i + 1) >= &H34 And bytCode(i + 1) <= &H4D) Then
                 '00-FF(1バイト目)----空き----
                 lngFit = 0
                 Exit For
-
+            
             '4E-9F(2バイト目)
             ElseIf (bytCode(i + 1) >= &H4E And bytCode(i + 1) <= &H9F) Then
                 '00-FF(1バイト目)
                 lngFit = lngFit + (2 * Multi_ByteWeight)
-
+            
             'A0-AB(2バイト目)
             ElseIf (bytCode(i + 1) >= &HA0 And bytCode(i + 1) <= &HAB) Then
                 '00-FF(1バイト目)----空き----
                 lngFit = 0
                 Exit For
-
+            
             'AC-D7(2バイト目)
             ElseIf (bytCode(i + 1) >= &HAC And bytCode(i + 1) <= &HD7) Then
                 '00-FF(1バイト目)----ハングル----
                 lngFit = 0
                 Exit For
-
+            
             'D8-DF(2バイト目)
             ElseIf (bytCode(i + 1) >= &HD8 And bytCode(i + 1) <= &HDF) Then
                 '00-FF(1バイト目)
                 lngFit = lngFit + (2 * Multi_ByteWeight)
-
+            
             'E0-F7(2バイト目)
             ElseIf (bytCode(i + 1) >= &HE0 And bytCode(i + 1) <= &HF7) Then
                 '00-FF(1バイト目)----外字----
                 lngFit = 0
                 Exit For
-
+            
             'F8-FF(2バイト目)
             ElseIf (bytCode(i + 1) >= &HF8 And bytCode(i + 1) <= &HFF) Then
                 '00-FF(1バイト目)
                 lngFit = lngFit + (2 * Multi_ByteWeight)
-
+            
             End If
             i = i + 1
         End If
@@ -429,13 +429,13 @@ Private Function JudgeUTF7(ByRef bytCode() As Byte, _
     Dim lngBY As Long
     Dim lngXB As Long
     Dim lngXX As Long
-
+    
     lngUB = JUDGESIZEMAX - 1
     If lngUB > UBound(bytCode()) Then
         lngUB = UBound(bytCode())
     End If
     lngWrk = 0
-
+    
     For i = 0 To lngUB
         '+～-まではBASE64ENCODE
         If bytCode(i) = Asc("+") And bln64 = False Then
@@ -471,7 +471,7 @@ Private Function JudgeUTF7(ByRef bytCode() As Byte, _
                 '20-7E(1バイト目)
                 If (bytCode(i) >= &H20 And bytCode(i) <= &H7E) Then
                     lngFit = lngFit + (1 * SingleByteWeight)
-
+        
                 '00-1F, 7F(1バイト目)
                 ElseIf (bytCode(i) >= &H0 And bytCode(i) <= &H1F) Or _
                         bytCode(i) = &H7F Then
@@ -495,7 +495,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
     Dim i As Long
     Dim lngFit As Long
     Dim lngUB As Long
-
+    
     lngUB = JUDGESIZEMAX - 1
     If lngUB > UBound(bytCode()) Then
         lngUB = UBound(bytCode())
@@ -513,7 +513,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
                 End If
             End If
         End If
-
+        
         'AND FC(1バイト目) + 80-BF(2-6バイト目)
         If (bytCode(i) And &HFC) = &HFC Then
             If i <= UBound(bytCode) - 5 Then
@@ -526,7 +526,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
                     i = i + 5
                 End If
             End If
-
+        
         'AND F8(1バイト目) + 80-BF(2-5バイト目)
         ElseIf (bytCode(i) And &HF8) = &HF8 Then
             If i <= UBound(bytCode) - 4 Then
@@ -538,7 +538,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
                     i = i + 4
                 End If
             End If
-
+            
         'AND F0(1バイト目) + 80-BF(2-4バイト目)
         ElseIf (bytCode(i) And &HF0) = &HF0 Then
             If i <= UBound(bytCode) - 3 Then
@@ -549,7 +549,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
                     i = i + 3
                 End If
             End If
-
+        
         'AND E0(1バイト目) + 80-BF(2-3バイト目)
         ElseIf (bytCode(i) And &HE0) = &HE0 Then
             If i <= UBound(bytCode) - 2 Then
@@ -559,7 +559,7 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
                     i = i + 2
                 End If
             End If
-
+        
         'AND C0(1バイト目) + 80-BF(2バイト目)
         ElseIf (bytCode(i) And &HC0) = &HC0 Then
             If i <= UBound(bytCode) - 1 Then
@@ -581,3 +581,4 @@ Private Function JudgeUTF8(ByRef bytCode() As Byte, _
     Next i
     JudgeUTF8 = (lngFit * 100) / ((lngUB + 1) * Multi_ByteWeight)
 End Function
+

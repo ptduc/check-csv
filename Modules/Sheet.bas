@@ -12,7 +12,7 @@ Dim rFind As Range
 
     'Default to ActiveSheet if none specified
     On Error GoTo ErrExit
-
+    
     If sSheet = "" Then
         Set wsFind = ActiveSheet
     Else
@@ -25,11 +25,11 @@ Dim rFind As Range
     Else
         Set rFind = wsFind.Range(sRange)
     End If
-
+    
     On Error GoTo 0
 
     Select Case lRowColCell
-
+    
         Case 1 'Find last row
             On Error Resume Next
             lastHasData = rFind.Find(What:="*", _
@@ -83,11 +83,12 @@ Dim rFind As Range
             On Error GoTo 0
 
     End Select
-
+    
     Exit Function
-
+    
 ErrExit:
 
     MsgBox "Error setting the worksheet or range."
 
 End Function
+
