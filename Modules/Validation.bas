@@ -1,7 +1,7 @@
 Attribute VB_Name = "Validation"
 'All checkbox are not checked
 Function allCheckboxNotChecked() As Boolean
-
+    
     allCheckboxNotChecked = True
     If ActiveSheet.CheckBoxes("chkAll").value <> 1 And ActiveSheet.CheckBoxes("chkAll").value <> 2 Then
         allCheckboxNotChecked = False
@@ -18,10 +18,10 @@ End Function
 
 Function vaidateFileSize(ByVal filePath As String, ByVal limit As String, ByVal fileName As String, ByVal flagRecordSize As String) As Boolean
     vaidateFileSize = True
-
+    
     Dim size As Double
     size = file.size(filePath)
-
+    
     If (flagRecordSize = "‘SŒ") Then
         If (size > limit) Then
             vaidateFileSize = False
@@ -55,7 +55,7 @@ Function validateNameRule(ByVal path As String, ByVal nameRule As String, ByVal 
     'fileNameOrignal = Split(file, ".")(0)
     fileNameOrignal = getFileName(path)
     startFileName = Left$(fileNameOrignal, 1)
-
+    
     'If Split(fileNameOrignal, "_")(0) <> Split(nameRule, "_")(0) Then
     If InStr(1, fileNameOrignal, nameRule) = 0 Then
         checkNameRule = False
@@ -63,14 +63,14 @@ Function validateNameRule(ByVal path As String, ByVal nameRule As String, ByVal 
     Else
         checkNameRule = True
     End If
-
+    
     If (startFileName = "_") Or IsLetter(startFileName) Then
         checkNameRule = True
     Else
         checkNameRule = False
         Log.ERROR (Replace(ERROR_NAME_RULE_APHABLE, "%{fileName}", fileName))
     End If
-
+    
 End Function
 
 Function validateBom(ByVal detectBOM As Boolean, ByVal fileName As String) As Boolean
@@ -112,5 +112,17 @@ Function IsLetter(ByVal strValue As String) As Boolean
 End Function
 
 Function validateQuote(ByVal textData As String, ByVal regEx As RegExp)
+
+    
+    
     validateQuote = regEx.Test(textData)
+    
 End Function
+
+Function duplicateNamePattern(errorPatterns As String)
+    errorPatterns = Replace(Trim(errorPatterns), " ", ",")
+    If IsEmpty(errorPatterns) = False And errorPatterns <> "" Then
+        MsgBox Replace(ERROR_DUPLICATE_NAME_PATTERN, "%{namePattern}", errorPatterns)
+    End If
+End Function
+
