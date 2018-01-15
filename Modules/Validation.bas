@@ -58,19 +58,19 @@ Function validateNameRule(ByVal path As String, ByVal nameRule As String, ByVal 
 
     'If Split(fileNameOrignal, "_")(0) <> Split(nameRule, "_")(0) Then
     If InStr(1, fileNameOrignal, nameRule) = 0 Then
-        checkNameRule = False
+        checkNameRule1 = False
         Log.ERROR (Replace(ERROR_NAME_RULE, "%{fileName}", fileName))
     Else
-        checkNameRule = True
+        checkNameRule1 = True
     End If
 
     If (startFileName = "_") Or IsLetter(startFileName) Then
-        checkNameRule = True
+        checkNameRule2 = True
     Else
-        checkNameRule = False
+        checkNameRule2 = False
         Log.ERROR (Replace(ERROR_NAME_RULE_APHABLE, "%{fileName}", fileName))
     End If
-
+    validateNameRule = checkNameRule1 AND checkNameRule2
 End Function
 
 Function validateBom(ByVal detectBOM As Boolean, ByVal fileName As String) As Boolean
@@ -113,4 +113,11 @@ End Function
 
 Function validateQuote(ByVal textData As String, ByVal regEx As RegExp)
     validateQuote = regEx.Test(textData)
+End Function
+
+Function duplicateNamePattern(errorPatterns As String)
+    errorPatterns = Replace(Trim(errorPatterns), " ", ",")
+    If IsEmpty(errorPatterns) = False And errorPatterns <> "" Then
+        MsgBox Replace(ERROR_DUPLICATE_NAME_PATTERN, "%{namePattern}", errorPatterns)
+    End If
 End Function

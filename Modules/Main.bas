@@ -6,7 +6,7 @@ Public Const TABLE_DEFINITE_TEMPLATE = "【カラム定義】テンプレート"
 'Range
 Public Const DATA_CHECK_RANGE = "C6:M"
 Public Const FILE_RULE_NAME_RANGE = "D5:D28"
-Public Const DEFINITE_TABLE_FIRST_COL = 22
+Public Const DEFINITE_TABLE_FIRST_COL = 21
 'Column Name "b→dash事前データチェックツール（Ver0.10）"
 Public Const COL_DATA_CHECK_CHECK_BOX = "B"
 Public Const COL_DATA_CHECK_NO = "C"
@@ -63,12 +63,11 @@ Public Const ERROR_COLUMN_NOT_NULL = "%{fileName}：行%{row}に%{column}カラムにデ
 Public Const ERROR_COLUMN_PRIMARY_KEY = "%{fileName}：行%{row}に%{column}カラムには重複データがあります。"
 Public Const ERROR_COLUMN_DATE_FORMAT = "%{fileName}：行%{row}に%{column}カラムの値のフォーマットは定義と一致していません。"
 Public Const ERROR_DOUBLE_QUOTE = "%{fileName}：行%{row}に、カラム入力規則と異なるカラムが存在します。"
+Public Const ERROR_DUPLICATE_NAME_PATTERN = "%{namePattern}が複数存在します。ファイル命名規則は一意になるように設定してください。"
 Public Const STATUS_PROCESSING = "実施中"
 Public Const STATUS_PROCESS_COMPLETED = "チェック完了"
-'"完了（正常）"
-Public Const STATUS_PROCESS_COMPLETED_OK = STATUS_PROCESS_COMPLETED
-'"完了（異常あり）"
-Public Const STATUS_PROCESS_COMPLETED_NOK = STATUS_PROCESS_COMPLETED
+Public Const STATUS_PROCESS_COMPLETED_OK = "完了（正常）"
+Public Const STATUS_PROCESS_COMPLETED_NOK = "完了（異常あり）"
 Public Const STATUS_PROCESS_INIT_FILE = "未実施"
 Public Const STATUS_PROCESS_STOP = "中断"
 
@@ -76,6 +75,8 @@ Public Const STATUS_PROCESS_STOP = "中断"
 Public dateColumns As Scripting.Dictionary
 Public parseErrorRows As Scripting.Dictionary
 Public currentCheckingRow As Integer
+Public isNormal As Boolean
+Public isForceStopNow As Boolean
 'Checkbox check all handle
 Sub chkAll_Click()
     Dim CB As CheckBox
@@ -124,12 +125,13 @@ Sub btnProcess_Click()
     fileNotExistsList = ""
     Set dateColumns = New Scripting.Dictionary
     Set parseErrorRows = New Scripting.Dictionary
-
+    isForceStopNow = False
+    
     If checkboxValid Then
-        'Loop all checkbox
-
+        'Loop all checkbox to check file, if has error to call MessageBOX
         For Each CB In ActiveSheet.CheckBoxes
-            If CB.Name <> ActiveSheet.CheckBoxes("chkAll").Name And CB.value = 1 Then
+            DoEvents
+            If isForceStopNow = False And CB.Name <> ActiveSheet.CheckBoxes("chkAll").Name And CB.value = 1 Then
                 'Row number processing
                 rowNum = Split(CB.Name, " ")(1)
                 currentCheckingRow = rowNum
@@ -158,6 +160,7 @@ Sub btnProcess_Click()
                     End If
                 End If
                 currentCheckingRow = currentCheckingRow + 1
+            ElseIf isForceStopNow = True Then Exit Sub
             End If
        Next CB
 
@@ -181,10 +184,12 @@ Sub btnProcess_Click()
 
     'Validate file content
     If checkboxValid And fileEmptyValid And fileExistsValid Then
-
+       
         For Each CB In ActiveSheet.CheckBoxes
             Set dateColumns = New Scripting.Dictionary
-           If CB.Name <> ActiveSheet.CheckBoxes("chkAll").Name And CB.value = 1 Then
+            isNormal = True
+           DoEvents
+           If isForceStopNow = False And CB.Name <> ActiveSheet.CheckBoxes("chkAll").Name And CB.value = 1 Then
                'Row number processing
                 rowNum = Split(CB.Name, " ")(1)
                 currentCheckingRow = rowNum
@@ -225,7 +230,7 @@ Sub btnProcess_Click()
                 Dim sheetOfDefiniteTable As Worksheet
                 Set sheetOfDefiniteTable = Common.definiteSheet(nameSheeetDefiniteTable)
                 lastRow = lastHasData(1, nameSheeetDefiniteTable, "D22:D500")
-                quantityColumnTable = lastRow - DEFINITE_TABLE_FIRST_COL + 1
+                quantityColumnTable = lastRow - DEFINITE_TABLE_FIRST_COL
                 If quantityColumnTable < 0 Then
                     MsgBox Replace(ERROR_NOT_DATA_DEFINITE_TABLE, "%{fileName}", fileOverView)
                     GoTo NextIterationCB
@@ -235,7 +240,7 @@ Sub btnProcess_Click()
                 Dim lstColPrimaryKey
                 lstColumnNotNull = ""
                 lstColPrimaryKey = ""
-                For i = DEFINITE_TABLE_FIRST_COL To lastRow Step 1
+                For i = (DEFINITE_TABLE_FIRST_COL + 1) To lastRow Step 1
                     no = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_No & i).value
                     typeDefinite = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_DATA_TYPE & i).value
                     isPrimaryKey = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_PRIMARY_KEY & i).value
@@ -258,26 +263,27 @@ Sub btnProcess_Click()
                 'Validate Bom
                 'IsValidateBom = validateBom(detectBOM(filePath), fileOverView)
                 If detectBOM(filePath) = True Then
+                    isNormal = False
                     Log.ERROR (Replace(ERROR_BOM, "%{fileName}", fileOverView))
                     Call updateStatusProcess(rowNum, STATUS_PROCESS_COMPLETED_NOK)
                     GoTo NextIterationCB
                 End If
 
                 '3 Validate file size
-                IsValid = vaidateFileSize(filePath, limitSize, fileOverView, flagRecordSize)
+                isNormal = isNormal And vaidateFileSize(filePath, limitSize, fileOverView, flagRecordSize)
 
                 '4 Validate file extension
-                IsValidExension = validateExtenstion(filePath, extensionFileList, fileOverView)
+                isNormal = isNormal And validateExtenstion(filePath, extensionFileList, fileOverView)
 
                 '5 Validate newLineCharacter
-                IsValidateNewLineCharacter = validateNewLineCharacter(newLineCharacter(filePath, 0), newLineDeclare, fileOverView)
+                isNormal = isNormal And validateNewLineCharacter(newLineCharacter(filePath, 0), newLineDeclare, fileOverView)
 
                 '6 Validate rule's name
                 fileNameRule = Split(fileNameRule, "<")(0)
-                IsValidateFileNameRule = validateNameRule(filePath, fileNameRule, fileOverView)
+                isNormal = isNormal And validateNameRule(filePath, fileNameRule, fileOverView)
 
                 '7.1 Validate encode
-                IsValidateEncoding = validateEncoding(encoding(filePath), endcodingType, fileOverView)
+                isNormal = isNormal And validateEncoding(encoding(filePath), endcodingType, fileOverView)
 
                 '8 Validate sperated character
                 newLineChar = file.newLineCharacter(filePath, 1)
@@ -293,33 +299,39 @@ Sub btnProcess_Click()
                     GoTo NextIterationCB
                 End If
 
-                checkSp = checkValidateSeperatedCharacter(filePath, FileType, quantityColumnTable, fileOverView, startRowData)
+                isNormal = isNormal And checkValidateSeperatedCharacter(filePath, FileType, quantityColumnTable, fileOverView, startRowData)
 
                 'Check Primary key
                 For Each pkey In lstColPrimaryKey
                     rowNumCSV = 1
                     For Each Row In csvContent
                         Count = 0
+                        DoEvents
+                        If isForceStopNow = True Then Exit Sub
                         For Each Row2 In csvContent
                             If Row(1, pkey) = Row2(1, pkey) Then
                                 Count = Count + 1
                             End If
                         Next
                         If Count > 1 Then
-                            ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + pkey + 1).value
+                            isNormal = False
+                            ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + pkey).value
                             Log.ERROR (Replace(Replace(Replace(ERROR_COLUMN_PRIMARY_KEY, "%{fileName}", fileOverView), "%{row}", rowNumCSV), "%{column}", ColumnName))
                         End If
                         rowNumCSV = rowNumCSV + 1
                     Next
                 Next pkey
-
+                
                 rowNumCSV = 1
                 For Each csvRow In csvContent
                     'Check NOT NULL
+                    DoEvents
+                    If isForceStopNow = True Then Exit Sub
                     For Each n In lstColumnNotNull
                         n = CInt(n)
                         If csvRow(1, n) = "" Then
-                            ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + n + 1).value
+                            isNormal = False
+                            ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + n).value
                             Log.ERROR (Replace(Replace(Replace(ERROR_COLUMN_NOT_NULL, "%{fileName}", fileOverView), "%{row}", rowNumCSV), "%{column}", ColumnName))
                         End If
                     Next n
@@ -331,14 +343,16 @@ Sub btnProcess_Click()
                     For Each key In dateColumns.Keys
                         FormatString = dateColumns(key)
                         OriginalValue = csvRow(1, key)
-                        ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + key - 1).value
+                        ColumnName = sheetOfDefiniteTable.Range(COL_DEFINITE_TABLE_NAME & DEFINITE_TABLE_FIRST_COL + key).value
 
                         If IsDate(OriginalValue) Then
                             FormattedValue = Format(OriginalValue, FormatString)
                             If FormattedValue <> OriginalValue Then
+                                isNormal = False
                                 Log.ERROR (Replace(Replace(Replace(ERROR_COLUMN_DATE_FORMAT, "%{fileName}", fileOverView), "%{row}", rowNumCSV), "%{column}", ColumnName))
                             End If
                         Else
+                            isNormal = False
                             Log.ERROR (Replace(Replace(Replace(ERROR_COLUMN_DATE_FORMAT, "%{fileName}", fileOverView), "%{row}", rowNumCSV), "%{column}", ColumnName))
                         End If
                     Next key
@@ -351,10 +365,14 @@ Sub btnProcess_Click()
                 Next csvRow
                 '9 Validate maxRecord
                 fileRecordQuantity = getFileLine(filePath)
-                IsValidateMaxRecord = validateMaxRecord(fileRecordQuantity, maxRecordRule, fileOverView, flagRecordSize)
-
-                Call updateStatusProcess(rowNum, STATUS_PROCESS_COMPLETED_OK)
+                isNormal = isNormal And validateMaxRecord(fileRecordQuantity, maxRecordRule, fileOverView, flagRecordSize)
+                If isNormal = True Then
+                    Call updateStatusProcess(rowNum, STATUS_PROCESS_COMPLETED_OK)
+                Else
+                    Call updateStatusProcess(rowNum, STATUS_PROCESS_COMPLETED_NOK)
+                End If
                 currentCheckingRow = currentCheckingRow + 1
+           ElseIf isForceStopNow = True Then Exit Sub
            End If
 NextIterationCB:
         Next CB
@@ -378,7 +396,6 @@ Sub btnSelectFile_Click()
         txtFileName = .SelectedItems(1)
         Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_PATH & rowClicked).value = txtFileName
         Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_PATH & rowClicked).Font.Color = vbBlack
-        Common.dataCheckSheet.Range(COL_DATA_CHECK_STATUS_CHECK & rowClicked).value = STATUS_PROCESS_INIT_FILE
     End If
 
     End With
@@ -401,6 +418,11 @@ Sub btnGetextractionList_Click()
         addIndex = 6
         errorIndex = 0
 
+        Dim stringPattern As String
+        stringPattern = ""
+        Dim errorPatterns As String
+        errorPatterns = ""
+
         For i = 5 To lastRow
 
             rowNum = Common.fileListSheet.Range(COL_FILE_LIST_ROW_NUM & i).value
@@ -409,43 +431,81 @@ Sub btnGetextractionList_Click()
             maxRecord = Common.fileListSheet.Range(COL_FILE_LIST_MAX_QUANTITY_RECORD & i).value
             maxFileSize = Common.fileListSheet.Range(COL_FILE_LIST_MAX_FILE_SIZE & i).value
             flagRecordSize = Common.fileListSheet.Range(COL_FILE_LIST_FLAG_RECORD_SIZE & i).value
+            flagDuplicateNamePattern = False
 
             If IsEmpty(fileOverView) = False Then
                 If (IsEmpty(maxRecord) Or maxRecord = 0 Or IsEmpty(maxFileSize) Or maxFileSize = 0) Then
                     If flagRecordSize = "全件" Then
                         errorRows = errorRows & " " & rowNum
                     Else
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_NO & addIndex).value = rowNum
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME_PATTERN & addIndex).value = Split(name_pattern, "<")(0)
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME & addIndex).value = fileOverView
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_SAVE & addIndex).value = i
+                        arrayPattern = Split(stringPattern, ";")
+                        For J = 0 To UBound(arrayPattern)
+                            If arrayPattern(J) = Split(name_pattern, "<")(0) Then
+                                errorPatterns = errorPatterns & " " & arrayPattern(J) & ":" & rowNum
+                                flagDuplicateNamePattern = True
+                                'Exit Sub
+                            End If
+                        Next J
+                        If flagDuplicateNamePattern = False Then
+                            stringPattern = stringPattern & ";" & Split(name_pattern, "<")(0)
+                        End If
+
+                        If Trim(errorPatterns) = "" Then
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_NO & addIndex).value = rowNum
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME_PATTERN & addIndex).value = Split(name_pattern, "<")(0)
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME & addIndex).value = fileOverView
+                            If flagRecordSize = "全件" Then
+                                Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_QUANTITY_RECORD & addIndex).value = maxRecord
+                                Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_FILE_SIZE & addIndex).value = maxFileSize
+                            End If
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_STATUS_CHECK & addIndex).value = STATUS_PROCESS_INIT_FILE
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_SAVE & addIndex).value = i
+                        End If
                         addIndex = addIndex + 1
                     End If
                 ElseIf IsEmpty(name_pattern) Then
                     errorRows = errorRows & " " & rowNum
                 Else
-                    Common.dataCheckSheet.Range(COL_DATA_CHECK_NO & addIndex).value = rowNum
-                    Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME_PATTERN & addIndex).value = Split(name_pattern, "<")(0)
-                    Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME & addIndex).value = fileOverView
-                    If flagRecordSize = "全件" Then
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_QUANTITY_RECORD & addIndex).value = maxRecord
-                        Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_FILE_SIZE & addIndex).value = maxFileSize
+                    arrayPattern = Split(stringPattern, ";")
+                    For J = 0 To UBound(arrayPattern)
+                        If arrayPattern(J) = Split(name_pattern, "<")(0) Then
+                            errorPatterns = errorPatterns & " " & arrayPattern(J) & ":" & rowNum
+                            flagDuplicateNamePattern = True
+                            'Exit Sub
+                        End If
+                    Next J
+                    If flagDuplicateNamePattern = False Then
+                        stringPattern = stringPattern & ";" & Split(name_pattern, "<")(0)
                     End If
-                    Common.dataCheckSheet.Range(COL_DATA_CHECK_SAVE & addIndex).value = i
+                    If Trim(errorPatterns) = "" Then
+                        Common.dataCheckSheet.Range(COL_DATA_CHECK_NO & addIndex).value = rowNum
+                        Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME_PATTERN & addIndex).value = Split(name_pattern, "<")(0)
+                        Common.dataCheckSheet.Range(COL_DATA_CHECK_FILE_NAME & addIndex).value = fileOverView
+                        If flagRecordSize = "全件" Then
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_QUANTITY_RECORD & addIndex).value = maxRecord
+                            Common.dataCheckSheet.Range(COL_DATA_CHECK_MAX_FILE_SIZE & addIndex).value = maxFileSize
+                        End If
+                        Common.dataCheckSheet.Range(COL_DATA_CHECK_STATUS_CHECK & addIndex).value = STATUS_PROCESS_INIT_FILE
+                        Common.dataCheckSheet.Range(COL_DATA_CHECK_SAVE & addIndex).value = i
+                    End If
                     addIndex = addIndex + 1
                 End If
             ElseIf (IsEmpty(fileOverView)) And checkRowEmpty(i) Then
                 errorRows = errorRows & " " & rowNum
             End If
         Next i
-        Validation.extractionEmptyFileSize (errorRows)
+        If IsEmpty(Trim(errorRows)) = False And Trim(errorRows) <> "" Then
+            Validation.extractionEmptyFileSize (errorRows)
+        Else
+            Validation.duplicateNamePattern (errorPatterns)
+        End If
     End If
 End Sub
 
 ' Cancel checking handle
 Sub btnCancel_Click()
+    isForceStopNow = True
     Call updateStatusProcess(currentCheckingRow, STATUS_PROCESS_STOP)
-    Exit Sub
 End Sub
 
 'Clear without confirmation
@@ -720,6 +780,9 @@ Function readCSV(ByVal filePath As String, ByVal separater As String, ByVal limi
 End Function
 
 Sub updateStatusProcess(ByVal rowNum As Integer, ByVal statusProcess As String)
-    Common.dataCheckSheet.Range(COL_DATA_CHECK_STATUS_CHECK & rowNum).value = statusProcess
-    Common.dataCheckSheet.Range(COL_DATA_CHECK_DATE & rowNum).value = Format(Now, "yyyy-mm-dd hh:mm:ss")
+    If ActiveSheet.CheckBoxes("Check " & rowNum).value = 1 Then
+        Common.dataCheckSheet.Range(COL_DATA_CHECK_STATUS_CHECK & rowNum).value = statusProcess
+        Common.dataCheckSheet.Range(COL_DATA_CHECK_DATE & rowNum).value = Format(Now, "yyyy-mm-dd hh:mm:ss")
+    End If
 End Sub
+
